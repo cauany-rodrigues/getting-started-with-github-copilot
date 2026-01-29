@@ -39,6 +39,23 @@
         </form>
         <div id="message" class="hidden"></div>
       </section>
+
+      <template id="activity-card-template">
+        <div class="activity-card">
+          <h4 class="activity-title"></h4>
+          <p class="activity-description"></p>
+          <p class="activity-availability">
+            <span class="label">Availability:</span>
+            <span class="activity-schedule"></span>
+          </p>
+          <div class="participants-section">
+            <h5>Participants</h5>
+            <ul class="participants-list">
+              <li class="participants-empty">Loading participants...</li>
+            </ul>
+          </div>
+        </div>
+      </template>
     </main>
 
     <footer>
