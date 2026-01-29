@@ -84,3 +84,52 @@ document.addEventListener("DOMContentLoaded", () => {
   // Initialize app
   fetchActivities();
 });
+
+const ensureParticipantsSection = (card) => {
+  let section = card.querySelector(".participants-section");
+  if (section) return section;
+
+  const anchor =
+    card.querySelector(".activity-availability") ||
+    card.querySelector(".activity-schedule")?.parentElement;
+
+  section = document.createElement("div");
+  section.className = "participants-section";
+  section.innerHTML = `
+    <h5>Participants</h5>
+    <ul class="participants-list">
+      <li class="participants-empty">Sem participantes</li>
+    </ul>
+  `;
+
+  if (anchor) {
+    anchor.insertAdjacentElement("afterend", section);
+  } else {
+    card.appendChild(section);
+  }
+  return section;
+};
+
+const renderParticipants = (card, participants = []) => {
+  const section = ensureParticipantsSection(card);
+  const ul = section.querySelector(".participants-list");
+  if (!ul) return;
+  ul.innerHTML = "";
+
+  if (participants.length === 0) {
+    const li = document.createElement("li");
+    li.className = "participants-empty";
+    li.textContent = "Sem participantes";
+    ul.appendChild(li);
+    return;
+  }
+
+  participants.forEach((email) => {
+    const li = document.createElement("li");
+    li.textContent = email;
+    ul.appendChild(li);
+  });
+};
+
+// Dentro do ponto onde o card é montado/atualizado:
+// renderParticipants(card, data.participants || []);
