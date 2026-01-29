@@ -4,8 +4,84 @@ document.addEventListener("DOMContentLoaded", () => {
   const signupForm = document.getElementById("signup-form");
   const messageDiv = document.getElementById("message");
 
+  const renderParticipants = (card, activityName, participants = []) => {
+    const ul = card.querySelector(".participants-list");
+    if (!ul) return;
+    ul.innerHTML = "";
+
+    if (participants.length === 0) {
+      const li = document.createElement("li");
+      li.className = "participants-empty";
+      li.textContent = "Sem participantes";
+      ul.appendChild(li);
+      return;
+    }
+
+    participants.forEach((email) => {
+      const li = document.createElement("li");
+      li.className = "participant-item";
+
+      const emailSpan = document.createElement("span");
+      emailSpan.className = "participant-email";
+      emailSpan.textContent = email;
+
+      const removeButton = document.createElement("button");
+      removeButton.type = "button";
+      removeButton.className = "participant-remove";
+      removeButton.setAttribute("aria-label", `Unregister ${email}`);
+      removeButton.innerHTML = "&times;";
+
+      removeButton.addEventListener("click", async () => {
+        removeButton.disabled = true;
+        removeButton.classList.add("is-loading");
+        try {
+          const response = await fetch(
+            `/activities/${encodeURIComponent(activityName)}/participants?email=${encodeURIComponent(email)}`,
+            { method: "DELETE" }
+          );
+
+          if (!response.ok) {
+            const result = await response.json().catch(() => ({}));
+            throw new Error(result.detail || "Failed to unregister participant");
+          }
+
+          await fetchActivities(activityName);
+        } catch (error) {
+          removeButton.disabled = false;
+          removeButton.classList.remove("is-loading");
+          alert(error.message || "Failed to unregister participant");
+        }
+      });
+
+      li.appendChild(emailSpan);
+      li.appendChild(removeButton);
+      ul.appendChild(li);
+    });
+  };
+
+  const renderCard = (name, details) => {
+    const activityCard = document.createElement("div");
+    activityCard.className = "activity-card";
+
+    const spotsLeft = details.max_participants - details.participants.length;
+
+    activityCard.innerHTML = `
+      <h4>${name}</h4>
+      <p>${details.description || ""}</p>
+      <p><strong>Schedule:</strong> ${details.schedule || ""}</p>
+      <p class="activity-availability"><span class="label">Availability:</span> ${spotsLeft} spots left</p>
+      <div class="participants-section">
+        <h5>Participants</h5>
+        <ul class="participants-list"></ul>
+      </div>
+    `;
+
+    renderParticipants(activityCard, name, details.participants || []);
+    activitiesList.appendChild(activityCard);
+  };
+
   // Function to fetch activities from API
-  async function fetchActivities() {
+  async function fetchActivities(preferredSelection) {
     try {
       const response = await fetch("/activities");
       const activities = await response.json();
@@ -13,26 +89,20 @@ document.addEventListener("DOMContentLoaded", () => {
       // Clear loading message
       activitiesList.innerHTML = "";
 
+      const selectedValue = preferredSelection ?? activitySelect.value;
+      activitySelect.innerHTML = '<option value="">-- Select an activity --</option>';
+
       // Populate activities list
       Object.entries(activities).forEach(([name, details]) => {
-        const activityCard = document.createElement("div");
-        activityCard.className = "activity-card";
-
-        const spotsLeft = details.max_participants - details.participants.length;
-
-        activityCard.innerHTML = `
-          <h4>${name}</h4>
-          <p>${details.description}</p>
-          <p><strong>Schedule:</strong> ${details.schedule}</p>
-          <p><strong>Availability:</strong> ${spotsLeft} spots left</p>
-        `;
-
-        activitiesList.appendChild(activityCard);
+        renderCard(name, details);
 
         // Add option to select dropdown
         const option = document.createElement("option");
         option.value = name;
         option.textContent = name;
+        if (name === selectedValue) {
+          option.selected = true;
+        }
         activitySelect.appendChild(option);
       });
     } catch (error) {
@@ -62,6 +132,7 @@ document.addEventListener("DOMContentLoaded", () => {
         messageDiv.textContent = result.message;
         messageDiv.className = "success";
         signupForm.reset();
+        await fetchActivities(activity);
       } else {
         messageDiv.textContent = result.detail || "An error occurred";
         messageDiv.className = "error";
@@ -84,52 +155,3 @@ document.addEventListener("DOMContentLoaded", () => {
   // Initialize app
   fetchActivities();
 });
-
-const ensureParticipantsSection = (card) => {
-  let section = card.querySelector(".participants-section");
-  if (section) return section;
-
-  const anchor =
-    card.querySelector(".activity-availability") ||
-    card.querySelector(".activity-schedule")?.parentElement;
-
-  section = document.createElement("div");
-  section.className = "participants-section";
-  section.innerHTML = `
-    <h5>Participants</h5>
-    <ul class="participants-list">
-      <li class="participants-empty">Sem participantes</li>
-    </ul>
-  `;
-
-  if (anchor) {
-    anchor.insertAdjacentElement("afterend", section);
-  } else {
-    card.appendChild(section);
-  }
-  return section;
-};
-
-const renderParticipants = (card, participants = []) => {
-  const section = ensureParticipantsSection(card);
-  const ul = section.querySelector(".participants-list");
-  if (!ul) return;
-  ul.innerHTML = "";
-
-  if (participants.length === 0) {
-    const li = document.createElement("li");
-    li.className = "participants-empty";
-    li.textContent = "Sem participantes";
-    ul.appendChild(li);
-    return;
-  }
-
-  participants.forEach((email) => {
-    const li = document.createElement("li");
-    li.textContent = email;
-    ul.appendChild(li);
-  });
-};
-
-// Dentro do ponto onde o card é montado/atualizado:
-// renderParticipants(card, data.participants || []);

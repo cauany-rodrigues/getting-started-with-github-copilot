@@ -62,59 +62,6 @@
       <p>&copy; 2023 Mergington High School</p>
     </footer>
 
-    <script>
-      document.addEventListener("DOMContentLoaded", () => {
-        (async () => {
-          const list = document.getElementById("activities-list");
-          const template = document.getElementById("activity-card-template");
-          if (!list || !template) return;
-
-          list.innerHTML = "";
-
-          let activities = {};
-          try {
-            const response = await fetch("/activities");
-            if (response.ok) {
-              activities = await response.json();
-            }
-          } catch (_) {}
-
-          const renderParticipants = (card, participants = []) => {
-            const ul = card.querySelector(".participants-list");
-            if (!ul) return;
-            ul.innerHTML = "";
-
-            if (participants.length === 0) {
-              const li = document.createElement("li");
-              li.className = "participants-empty";
-              li.textContent = "Sem participantes";
-              ul.appendChild(li);
-              return;
-            }
-
-            participants.forEach((email) => {
-              const li = document.createElement("li");
-              li.textContent = email;
-              ul.appendChild(li);
-            });
-          };
-
-          const renderCard = (name, data) => {
-            const fragment = template.content.cloneNode(true);
-            const card = fragment.querySelector(".activity-card");
-            card.querySelector(".activity-title").textContent = name;
-            card.querySelector(".activity-description").textContent = data.description || "";
-            const schedule = card.querySelector(".activity-schedule");
-            if (schedule) {
-              schedule.textContent = data.availability || data.schedule || "";
-            }
-            renderParticipants(card, data.participants || []);
-            list.appendChild(fragment);
-          };
-
-          Object.entries(activities).forEach(([name, data]) => renderCard(name, data));
-        })().catch(() => {});
-      });
-    </script>
+    <script src="app.js"></script>
   </body>
 </html>
