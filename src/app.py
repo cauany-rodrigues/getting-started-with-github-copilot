@@ -85,7 +85,14 @@ def root():
 
 @app.get("/activities")
 def get_activities():
-    return activities
+    return {
+        name: {
+            **data,
+            "availability": data["schedule"],
+            "participants": list(data.get("participants", []))
+        }
+        for name, data in activities.items()
+    }
 
 
 @app.post("/activities/{activity_name}/signup")
@@ -104,3 +111,11 @@ def signup_for_activity(activity_name: str, email: str):
         raise HTTPException(status_code=400, detail="Student already signed up for this activity")
     activity["participants"].append(email)
     return {"message": f"Signed up {email} for {activity_name}"}
+
+
+@app.get("/activities/{activity_name}/participants")
+def get_activity_participants(activity_name: str):
+    """Get participants for a specific activity"""
+    if activity_name not in activities:
+        raise HTTPException(status_code=404, detail="Activity not found")
+    return {"participants": activities[activity_name]["participants"]}
